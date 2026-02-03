@@ -41,6 +41,7 @@ import org.apache.kafka.common.resource.ResourcePatternFilter;
 import org.apache.kafka.common.resource.ResourceType;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -72,12 +73,12 @@ public class AclsService {
   }
 
   public Flux<AclBinding> listAcls(KafkaCluster cluster, ResourcePatternFilter filter, String principalSearch,
-                                   Boolean fts) {
+      Boolean fts) {
     return adminClientService.get(cluster)
-      .flatMap(c -> c.listAcls(filter))
-      .map(lst -> filter(new ArrayList<>(lst), principalSearch, fts))
-      .flatMapMany(Flux::fromIterable)
-      .sort(Comparator.comparing(AclBinding::toString));  //sorting to keep stable order on different calls
+        .flatMap(c -> c.listAcls(filter))
+        .map(lst -> filter(new ArrayList<>(lst), principalSearch, fts))
+        .flatMapMany(Flux::fromIterable)
+        .sort(Comparator.comparing(AclBinding::toString));  //sorting to keep stable order on different calls
   }
 
   private List<AclBinding> filter(List<AclBinding> acls, String principalSearch, Boolean fts) {
@@ -130,11 +131,11 @@ public class AclsService {
 
   // creates allow binding for resources by prefix or specific names list
   private List<AclBinding> createAllowBindings(ResourceType resourceType,
-                                               List<AclOperation> opsToAllow,
-                                               String principal,
-                                               String host,
-                                               @Nullable String resourcePrefix,
-                                               @Nullable Collection<String> resourceNames) {
+      List<AclOperation> opsToAllow,
+      String principal,
+      String host,
+      @Nullable String resourcePrefix,
+      @Nullable Collection<String> resourceNames) {
     List<AclBinding> bindings = new ArrayList<>();
     if (resourcePrefix != null) {
       for (var op : opsToAllow) {
@@ -148,11 +149,11 @@ public class AclsService {
       resourceNames.stream()
           .distinct()
           .forEach(resource ->
-              opsToAllow.forEach(op ->
-                  bindings.add(
-                      new AclBinding(
-                          new ResourcePattern(resourceType, resource, LITERAL),
-                          new AccessControlEntry(principal, host, op, ALLOW)))));
+            opsToAllow.forEach(op ->
+              bindings.add(
+              new AclBinding(
+                  new ResourcePattern(resourceType, resource, LITERAL),
+                  new AccessControlEntry(principal, host, op, ALLOW)))));
     }
     return bindings;
   }
@@ -204,14 +205,16 @@ public class AclsService {
             request.getTopicsPrefix(),
             request.getTopics()));
 
-    bindings.addAll(
-        createAllowBindings(
-            TRANSACTIONAL_ID,
-            List.of(WRITE, DESCRIBE),
-            request.getPrincipal(),
-            request.getHost(),
-            request.getTransactionsIdPrefix(),
-            Optional.ofNullable(request.getTransactionalId()).map(List::of).orElse(null)));
+    if (StringUtils.hasText(request.getTransactionsIdPrefix()) || StringUtils.hasText(request.getTransactionalId())) {
+      bindings.addAll(
+          createAllowBindings(
+              TRANSACTIONAL_ID,
+              List.of(WRITE, DESCRIBE),
+              request.getPrincipal(),
+              request.getHost(),
+              request.getTransactionsIdPrefix(),
+              Optional.ofNullable(request.getTransactionalId()).map(List::of).orElse(null)));
+    }
 
     if (Boolean.TRUE.equals(request.getIdempotent())) {
       bindings.addAll(

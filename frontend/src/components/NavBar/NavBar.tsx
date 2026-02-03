@@ -14,6 +14,7 @@ import MenuIcon from 'components/common/Icons/MenuIcon';
 
 import { UserTimezone } from './UserTimezone/UserTimezone';
 import UserInfo from './UserInfo/UserInfo';
+import ExternalLinkIcon from 'components/common/Icons/ExternalLinkIcon';
 import * as S from './NavBar.styled';
 
 interface Props {
@@ -54,6 +55,13 @@ const options = [
 
 const NavBar: React.FC<Props> = ({ onBurgerClick }) => {
   const { themeMode, setThemeMode } = useContext(ThemeModeContext);
+  const supportUrl = window._env_?.REACT_APP_SUPPORT_URL;
+
+  const handleSupportRedirect = () => {
+    if (supportUrl) {
+      window.open(supportUrl, '_blank');
+    }
+  };
 
   return (
     <S.Navbar role="navigation" aria-label="Page Header">
@@ -74,6 +82,15 @@ const NavBar: React.FC<Props> = ({ onBurgerClick }) => {
         </S.NavbarBrand>
       </S.NavbarBrand>
       <S.NavbarSocial>
+        {supportUrl && (
+          <Button
+            buttonType="text"
+            buttonSize="S"
+            onClick={handleSupportRedirect}
+          >
+            Docs <ExternalLinkIcon />
+          </Button>
+        )}
         <UserTimezone />
 
         <Select
