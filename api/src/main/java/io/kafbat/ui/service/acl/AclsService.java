@@ -16,6 +16,7 @@ import static org.apache.kafka.common.resource.ResourceType.TRANSACTIONAL_ID;
 
 import com.google.common.collect.Sets;
 import io.kafbat.ui.config.ClustersProperties;
+import io.kafbat.ui.exception.ValidationException;
 import io.kafbat.ui.model.CreateConsumerAclDTO;
 import io.kafbat.ui.model.CreateProducerAclDTO;
 // import io.kafbat.ui.model.CreateStreamAppAclDTO;
@@ -53,7 +54,20 @@ public class AclsService {
   private final AdminClientService adminClientService;
   private final ClustersProperties clustersProperties;
 
+  private void validatePrincipal(String principal) {
+    if (principal == null || principal.isEmpty()) {
+      throw new IllegalArgumentException("expected a string in format principalType:principalName but got " + principal);
+    }
+
+    String[] split = principal.split(":", 2);
+
+    if (split.length != 2) {
+      throw new IllegalArgumentException("expected a string in format principalType:principalName but got " + principal);
+    }
+  }
+
   public Mono<Void> createAcl(KafkaCluster cluster, AclBinding aclBinding) {
+    validatePrincipal(aclBinding.entry().principal());
     return adminClientService.get(cluster)
         .flatMap(ac -> createAclsWithLogging(ac, List.of(aclBinding)));
   }
@@ -159,6 +173,7 @@ public class AclsService {
   }
 
   public Mono<Void> createConsumerAcl(KafkaCluster cluster, CreateConsumerAclDTO request) {
+    validatePrincipal(request.getPrincipal());
     return adminClientService.get(cluster)
         .flatMap(ac -> createAclsWithLogging(ac, createConsumerBindings(request)))
         .then();
@@ -187,6 +202,7 @@ public class AclsService {
   }
 
   public Mono<Void> createProducerAcl(KafkaCluster cluster, CreateProducerAclDTO request) {
+    validatePrincipal(request.getPrincipal());
     return adminClientService.get(cluster)
         .flatMap(ac -> createAclsWithLogging(ac, createProducerBindings(request)))
         .then();

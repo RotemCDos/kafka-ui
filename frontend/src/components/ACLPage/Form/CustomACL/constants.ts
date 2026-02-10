@@ -22,12 +22,25 @@ function toOptionsArray<T extends string>(
 }
 
 export const resourceTypes = toOptionsArray(
-  Object.values(KafkaAclResourceType),
+  Object.values(KafkaAclResourceType).filter(
+    (key) =>
+      key !== ('DELEGATION_TOKEN' as any) &&
+      key !== ('USER' as any)
+  ),
   KafkaAclResourceType.UNKNOWN
 );
 
 export const operations = toOptionsArray(
-  Object.values(KafkaAclOperationEnum),
+  Object.values(KafkaAclOperationEnum).filter(
+    (key) =>
+      key !== ('ALL' as any) &&
+      key !== ('DELETE' as any) &&
+      key !== ('ALTER' as any) &&
+      key !== ('CLUSTER_ACTION' as any) &&
+      key !== ('ALTER_CONFIGS' as any) &&
+      key !== ('DESCRIBE_TOKENS' as any) &&
+      key !== ('CREATE_TOKENS' as any)
+  ),
   KafkaAclOperationEnum.UNKNOWN
 );
 
