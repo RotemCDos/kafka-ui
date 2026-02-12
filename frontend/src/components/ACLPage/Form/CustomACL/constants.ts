@@ -31,18 +31,40 @@ export const resourceTypes = toOptionsArray(
 );
 
 export const operations = toOptionsArray(
-  Object.values(KafkaAclOperationEnum).filter(
-    (key) =>
-      key !== ('ALL' as any) &&
-      key !== ('DELETE' as any) &&
-      key !== ('ALTER' as any) &&
-      key !== ('CLUSTER_ACTION' as any) &&
-      key !== ('ALTER_CONFIGS' as any) &&
-      key !== ('DESCRIBE_TOKENS' as any) &&
-      key !== ('CREATE_TOKENS' as any)
-  ),
+  Object.values(KafkaAclOperationEnum),
   KafkaAclOperationEnum.UNKNOWN
 );
+
+export const resourceTypeOperationsMap: Record<
+  KafkaAclResourceType,
+  SelectOption<KafkaAclOperationEnum>[]
+> = {
+  [KafkaAclResourceType.TOPIC]: toOptionsArray(
+    [
+      KafkaAclOperationEnum.DESCRIBE,
+      KafkaAclOperationEnum.CREATE,
+      KafkaAclOperationEnum.WRITE,
+      KafkaAclOperationEnum.READ,
+      KafkaAclOperationEnum.DESCRIBE_CONFIGS,
+    ],
+    KafkaAclOperationEnum.UNKNOWN
+  ),
+  [KafkaAclResourceType.GROUP]: toOptionsArray(
+    [KafkaAclOperationEnum.DESCRIBE, KafkaAclOperationEnum.READ],
+    KafkaAclOperationEnum.UNKNOWN
+  ),
+  [KafkaAclResourceType.TRANSACTIONAL_ID]: toOptionsArray(
+    [KafkaAclOperationEnum.DESCRIBE, KafkaAclOperationEnum.WRITE],
+    KafkaAclOperationEnum.UNKNOWN
+  ),
+  [KafkaAclResourceType.CLUSTER]: toOptionsArray(
+    [KafkaAclOperationEnum.DESCRIBE, KafkaAclOperationEnum.IDEMPOTENT_WRITE],
+    KafkaAclOperationEnum.UNKNOWN
+  ),
+  [KafkaAclResourceType.UNKNOWN]: operations,
+  [KafkaAclResourceType.DELEGATION_TOKEN]: operations,
+  [KafkaAclResourceType.USER]: operations,
+};
 
 export const permissions: RadioOption[] = [
   {
@@ -55,7 +77,10 @@ export const permissions: RadioOption[] = [
   },
 ];
 
+const defaultResourceType = resourceTypes[0].value as KafkaAclResourceType;
+
 export const defaultValues: Partial<FormValues> = {
-  resourceType: resourceTypes[0].value as KafkaAclResourceType,
-  operation: operations[0].value as KafkaAclOperationEnum,
+  resourceType: defaultResourceType,
+  operation: resourceTypeOperationsMap[defaultResourceType][0]
+    .value as KafkaAclOperationEnum,
 };
