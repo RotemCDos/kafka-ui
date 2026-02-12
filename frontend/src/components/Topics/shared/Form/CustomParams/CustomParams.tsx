@@ -42,15 +42,10 @@ const CustomParams: React.FC<CustomParamsProps> = ({
     };
   });
 
-  const [existingFields, setExistingFields] = React.useState<string[]>([]);
+  const existingFields = controlledFields.map((field) => field.name);
   const removeField = (index: number): void => {
-    const itemIndex = existingFields.indexOf(controlledFields[index].name);
-    if (itemIndex !== -1) {
-      existingFields.splice(itemIndex, 1);
-      setExistingFields(existingFields);
-      remove(index);
-      trigger('customParams');
-    }
+    remove(index);
+    trigger('customParams');
   };
 
   return (
@@ -58,13 +53,11 @@ const CustomParams: React.FC<CustomParamsProps> = ({
       {controlledFields?.map((field, idx) => (
         <CustomParamField
           key={field.id}
-          config={config}
           field={field}
           remove={removeField}
           index={idx}
           isDisabled={isSubmitting}
           existingFields={existingFields}
-          setExistingFields={setExistingFields}
         />
       ))}
       <FormError>
