@@ -303,7 +303,7 @@ public class ClustersProperties {
   }
 
   private Map<String, Object> flattenClusterProperties(@Nullable String prefix,
-      @Nullable Map<String, Object> propertiesMap) {
+                                                       @Nullable Map<String, Object> propertiesMap) {
     Map<String, Object> flattened = new HashMap<>();
     if (propertiesMap != null) {
       propertiesMap.forEach((k, v) -> {

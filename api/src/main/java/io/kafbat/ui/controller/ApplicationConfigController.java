@@ -77,13 +77,13 @@ public class ApplicationConfigController extends AbstractController implements A
         .then(Mono.fromSupplier(() -> ResponseEntity.ok(
             new ApplicationConfigDTO()
                 .properties(configMapper.toDto(dynamicConfigOperations.getCurrentProperties()))
-              )))
+        )))
         .doOnEach(sig -> audit(context, sig));
   }
 
   @Override
   public Mono<ResponseEntity<Void>> restartWithConfig(Mono<RestartRequestDTO> restartRequestDto,
-      ServerWebExchange exchange) {
+                                                      ServerWebExchange exchange) {
     var context = AccessContext.builder()
         .applicationConfigActions(EDIT)
         .operationName("restartWithConfig")
@@ -101,7 +101,7 @@ public class ApplicationConfigController extends AbstractController implements A
 
   @Override
   public Mono<ResponseEntity<UploadedFileInfoDTO>> uploadConfigRelatedFile(Flux<Part> fileFlux,
-      ServerWebExchange exchange) {
+                                                                           ServerWebExchange exchange) {
     var context = AccessContext.builder()
         .applicationConfigActions(EDIT)
         .operationName("uploadConfigRelatedFile")
@@ -109,15 +109,15 @@ public class ApplicationConfigController extends AbstractController implements A
     return validateAccess(context)
         .then(fileFlux.single())
         .flatMap(file ->
-          dynamicConfigOperations.uploadConfigRelatedFile((FilePart) file)
-            .map(path -> new UploadedFileInfoDTO(path.toString()))
-            .map(ResponseEntity::ok))
+            dynamicConfigOperations.uploadConfigRelatedFile((FilePart) file)
+                .map(path -> new UploadedFileInfoDTO(path.toString()))
+                .map(ResponseEntity::ok))
         .doOnEach(sig -> audit(context, sig));
   }
 
   @Override
   public Mono<ResponseEntity<ApplicationConfigValidationDTO>> validateConfig(Mono<ApplicationConfigDTO> configDto,
-      ServerWebExchange exchange) {
+                                                                             ServerWebExchange exchange) {
     var context = AccessContext.builder()
         .applicationConfigActions(EDIT)
         .operationName("validateConfig")
