@@ -30,12 +30,12 @@ import reactor.core.publisher.Mono;
 
 class AclsServiceTest {
 
- private static final KafkaCluster CLUSTER = KafkaCluster.builder().build();
+  private static final KafkaCluster CLUSTER = KafkaCluster.builder().build();
 
- private final ReactiveAdminClient adminClientMock = mock(ReactiveAdminClient.class);
- private final AdminClientService adminClientService = mock(AdminClientService.class);
+  private final ReactiveAdminClient adminClientMock = mock(ReactiveAdminClient.class);
+  private final AdminClientService adminClientService = mock(AdminClientService.class);
 
- private final AclsService aclsService = new AclsService(adminClientService, new ClustersProperties());
+  private final AclsService aclsService = new AclsService(adminClientService, new ClustersProperties());
 
  @BeforeEach
  void initMocks() {
