@@ -52,6 +52,3 @@ node_modules/
 @rerun.txt
 test-results
 frontend/test-report.xml
-
-
-test-env/
