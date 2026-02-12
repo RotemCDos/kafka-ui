@@ -52,3 +52,8 @@ node_modules/
 @rerun.txt
 test-results
 frontend/test-report.xml
+
+
+docker-compose.yml
+generate-ssl.ps1
+ssl/
