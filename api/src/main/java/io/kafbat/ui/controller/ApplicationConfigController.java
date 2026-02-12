@@ -42,10 +42,22 @@ public class ApplicationConfigController extends AbstractController implements A
   private final KafkaClusterFactory kafkaClusterFactory;
   private final ApplicationInfoService applicationInfoService;
   private final DynamicConfigMapper configMapper;
+  private final ClustersProperties clustersProperties;
 
   @Override
   public Mono<ResponseEntity<ApplicationInfoDTO>> getApplicationInfo(ServerWebExchange exchange) {
     return Mono.just(applicationInfoService.getApplicationInfo()).map(ResponseEntity::ok);
+  }
+
+  @Override
+  public Mono<ResponseEntity<String>> getSupportUrl(ServerWebExchange exchange) {
+    return Mono.fromSupplier(() -> {
+      var clusters = clustersProperties.getClusters();
+      String supportUrl = clusters != null && !clusters.isEmpty()
+          ? clusters.get(0).getSupportUrl()
+          : null;
+      return ResponseEntity.ok(supportUrl);
+    });
   }
 
   @Override

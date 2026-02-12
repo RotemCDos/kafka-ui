@@ -22,6 +22,14 @@ export function useAuthSettings() {
   });
 }
 
+export function useSupportUrl() {
+  return useSuspenseQuery({
+    queryKey: ['app', 'supportUrl'],
+    queryFn: () => appConfig.getSupportUrl(),
+    ...QUERY_REFETCH_OFF_OPTIONS,
+  });
+}
+
 export function useAuthenticate() {
   return useMutation({
     mutationFn: (params: { username: string; password: string }) =>

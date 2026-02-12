@@ -102,6 +102,8 @@ public class ClustersProperties {
     List<@Valid Masking> masking;
 
     AuditProperties audit;
+
+    String supportUrl;
   }
 
   @Data
