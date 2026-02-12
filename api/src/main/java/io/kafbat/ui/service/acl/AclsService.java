@@ -1,6 +1,6 @@
 package io.kafbat.ui.service.acl;
 
-// import static org.apache.kafka.common.acl.AclOperation.ALL;
+import static org.apache.kafka.common.acl.AclOperation.ALL;
 import static org.apache.kafka.common.acl.AclOperation.CREATE;
 import static org.apache.kafka.common.acl.AclOperation.DESCRIBE;
 import static org.apache.kafka.common.acl.AclOperation.IDEMPOTENT_WRITE;
@@ -16,10 +16,9 @@ import static org.apache.kafka.common.resource.ResourceType.TRANSACTIONAL_ID;
 
 import com.google.common.collect.Sets;
 import io.kafbat.ui.config.ClustersProperties;
-import io.kafbat.ui.exception.ValidationException;
 import io.kafbat.ui.model.CreateConsumerAclDTO;
 import io.kafbat.ui.model.CreateProducerAclDTO;
-// import io.kafbat.ui.model.CreateStreamAppAclDTO;
+import io.kafbat.ui.model.CreateStreamAppAclDTO;
 import io.kafbat.ui.model.KafkaCluster;
 import io.kafbat.ui.service.AdminClientService;
 import io.kafbat.ui.service.ReactiveAdminClient;
@@ -42,7 +41,6 @@ import org.apache.kafka.common.resource.ResourcePatternFilter;
 import org.apache.kafka.common.resource.ResourceType;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
-import org.springframework.util.StringUtils;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -54,20 +52,7 @@ public class AclsService {
   private final AdminClientService adminClientService;
   private final ClustersProperties clustersProperties;
 
-  private void validatePrincipal(String principal) {
-    if (principal == null || principal.isEmpty()) {
-      throw new IllegalArgumentException("expected a string in format principalType:principalName but got " + principal);
-    }
-
-    String[] split = principal.split(":", 2);
-
-    if (split.length != 2) {
-      throw new IllegalArgumentException("expected a string in format principalType:principalName but got " + principal);
-    }
-  }
-
   public Mono<Void> createAcl(KafkaCluster cluster, AclBinding aclBinding) {
-    validatePrincipal(aclBinding.entry().principal());
     return adminClientService.get(cluster)
         .flatMap(ac -> createAclsWithLogging(ac, List.of(aclBinding)));
   }
@@ -87,12 +72,12 @@ public class AclsService {
   }
 
   public Flux<AclBinding> listAcls(KafkaCluster cluster, ResourcePatternFilter filter, String principalSearch,
-      Boolean fts) {
+                                   Boolean fts) {
     return adminClientService.get(cluster)
-        .flatMap(c -> c.listAcls(filter))
-        .map(lst -> filter(new ArrayList<>(lst), principalSearch, fts))
-        .flatMapMany(Flux::fromIterable)
-        .sort(Comparator.comparing(AclBinding::toString));  //sorting to keep stable order on different calls
+      .flatMap(c -> c.listAcls(filter))
+      .map(lst -> filter(new ArrayList<>(lst), principalSearch, fts))
+      .flatMapMany(Flux::fromIterable)
+      .sort(Comparator.comparing(AclBinding::toString));  //sorting to keep stable order on different calls
   }
 
   private List<AclBinding> filter(List<AclBinding> acls, String principalSearch, Boolean fts) {
@@ -145,11 +130,11 @@ public class AclsService {
 
   // creates allow binding for resources by prefix or specific names list
   private List<AclBinding> createAllowBindings(ResourceType resourceType,
-      List<AclOperation> opsToAllow,
-      String principal,
-      String host,
-      @Nullable String resourcePrefix,
-      @Nullable Collection<String> resourceNames) {
+                                               List<AclOperation> opsToAllow,
+                                               String principal,
+                                               String host,
+                                               @Nullable String resourcePrefix,
+                                               @Nullable Collection<String> resourceNames) {
     List<AclBinding> bindings = new ArrayList<>();
     if (resourcePrefix != null) {
       for (var op : opsToAllow) {
@@ -163,17 +148,16 @@ public class AclsService {
       resourceNames.stream()
           .distinct()
           .forEach(resource ->
-            opsToAllow.forEach(op ->
-              bindings.add(
-              new AclBinding(
-                  new ResourcePattern(resourceType, resource, LITERAL),
-                  new AccessControlEntry(principal, host, op, ALLOW)))));
+              opsToAllow.forEach(op ->
+                  bindings.add(
+                      new AclBinding(
+                          new ResourcePattern(resourceType, resource, LITERAL),
+                          new AccessControlEntry(principal, host, op, ALLOW)))));
     }
     return bindings;
   }
 
   public Mono<Void> createConsumerAcl(KafkaCluster cluster, CreateConsumerAclDTO request) {
-    validatePrincipal(request.getPrincipal());
     return adminClientService.get(cluster)
         .flatMap(ac -> createAclsWithLogging(ac, createConsumerBindings(request)))
         .then();
@@ -202,7 +186,6 @@ public class AclsService {
   }
 
   public Mono<Void> createProducerAcl(KafkaCluster cluster, CreateProducerAclDTO request) {
-    validatePrincipal(request.getPrincipal());
     return adminClientService.get(cluster)
         .flatMap(ac -> createAclsWithLogging(ac, createProducerBindings(request)))
         .then();
@@ -221,16 +204,14 @@ public class AclsService {
             request.getTopicsPrefix(),
             request.getTopics()));
 
-    if (StringUtils.hasText(request.getTransactionsIdPrefix()) || StringUtils.hasText(request.getTransactionalId())) {
-      bindings.addAll(
-          createAllowBindings(
-              TRANSACTIONAL_ID,
-              List.of(WRITE, DESCRIBE),
-              request.getPrincipal(),
-              request.getHost(),
-              request.getTransactionsIdPrefix(),
-              Optional.ofNullable(request.getTransactionalId()).map(List::of).orElse(null)));
-    }
+    bindings.addAll(
+        createAllowBindings(
+            TRANSACTIONAL_ID,
+            List.of(WRITE, DESCRIBE),
+            request.getPrincipal(),
+            request.getHost(),
+            request.getTransactionsIdPrefix(),
+            Optional.ofNullable(request.getTransactionalId()).map(List::of).orElse(null)));
 
     if (Boolean.TRUE.equals(request.getIdempotent())) {
       bindings.addAll(
@@ -245,52 +226,52 @@ public class AclsService {
     return bindings;
   }
 
-  // public Mono<Void> createStreamAppAcl(KafkaCluster cluster, CreateStreamAppAclDTO request) {
-  //   return adminClientService.get(cluster)
-  //       .flatMap(ac -> createAclsWithLogging(ac, createStreamAppBindings(request)))
-  //       .then();
-  // }
+  public Mono<Void> createStreamAppAcl(KafkaCluster cluster, CreateStreamAppAclDTO request) {
+    return adminClientService.get(cluster)
+        .flatMap(ac -> createAclsWithLogging(ac, createStreamAppBindings(request)))
+        .then();
+  }
 
-  // // Read on input topics, Write on output topics
-  // // ALL on applicationId-prefixed Groups and Topics
-  // private List<AclBinding> createStreamAppBindings(CreateStreamAppAclDTO request) {
-  //   List<AclBinding> bindings = new ArrayList<>();
-  //   bindings.addAll(
-  //       createAllowBindings(
-  //           TOPIC,
-  //           List.of(READ),
-  //           request.getPrincipal(),
-  //           request.getHost(),
-  //           null,
-  //           request.getInputTopics()));
+  // Read on input topics, Write on output topics
+  // ALL on applicationId-prefixed Groups and Topics
+  private List<AclBinding> createStreamAppBindings(CreateStreamAppAclDTO request) {
+    List<AclBinding> bindings = new ArrayList<>();
+    bindings.addAll(
+        createAllowBindings(
+            TOPIC,
+            List.of(READ),
+            request.getPrincipal(),
+            request.getHost(),
+            null,
+            request.getInputTopics()));
 
-  //   bindings.addAll(
-  //       createAllowBindings(
-  //           TOPIC,
-  //           List.of(WRITE),
-  //           request.getPrincipal(),
-  //           request.getHost(),
-  //           null,
-  //           request.getOutputTopics()));
+    bindings.addAll(
+        createAllowBindings(
+            TOPIC,
+            List.of(WRITE),
+            request.getPrincipal(),
+            request.getHost(),
+            null,
+            request.getOutputTopics()));
 
-  //   bindings.addAll(
-  //       createAllowBindings(
-  //           GROUP,
-  //           List.of(ALL),
-  //           request.getPrincipal(),
-  //           request.getHost(),
-  //           request.getApplicationId(),
-  //           null));
+    bindings.addAll(
+        createAllowBindings(
+            GROUP,
+            List.of(ALL),
+            request.getPrincipal(),
+            request.getHost(),
+            request.getApplicationId(),
+            null));
 
-  //   bindings.addAll(
-  //       createAllowBindings(
-  //           TOPIC,
-  //           List.of(ALL),
-  //           request.getPrincipal(),
-  //           request.getHost(),
-  //           request.getApplicationId(),
-  //           null));
-  //   return bindings;
-  // }
+    bindings.addAll(
+        createAllowBindings(
+            TOPIC,
+            List.of(ALL),
+            request.getPrincipal(),
+            request.getHost(),
+            request.getApplicationId(),
+            null));
+    return bindings;
+  }
 
 }

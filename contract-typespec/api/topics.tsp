@@ -1,7 +1,6 @@
 import "@typespec/openapi";
 import "./responses.tsp";
 import "./models.tsp";
-import "./acls.tsp";
 
 namespace Api;
 
@@ -166,16 +165,7 @@ interface TopicsApi {
   connectors(
     @path clusterName: string,
     @path topicName: string
-  ) : FullConnectorInfo[];
-
-  @get
-  @route("/{topicName}/acls")
-  @summary("listTopicAcls")
-  @operationId("listTopicAcls")
-  listTopicAcls(
-    @path clusterName: string,
-    @path topicName: string,
-  ): KafkaAcl[];
+  ) : FullConnectorInfo[]
 }
 
 model TopicsResponse {

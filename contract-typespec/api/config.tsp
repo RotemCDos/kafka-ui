@@ -42,12 +42,6 @@ interface ApplicationConfigApi {
   ): UploadedFileInfo;
 
   @get
-  @route("/support-url")
-  @summary("Get support URL")
-  @operationId("getSupportUrl")
-  getSupportUrl(): string;
-
-  @get
   @route("/authentication")
   @summary("Get authentication methods enabled for the app and other related settings")
   @operationId("getAuthenticationSettings")
@@ -223,7 +217,6 @@ model ApplicationConfig {
           consoleAuditEnabled?: boolean;
           auditTopicProperties?: Record<string>;
         };
-        supportUrl?: string;
       }[];
     };
   };

@@ -59,8 +59,7 @@ alias ClusterFeature =
   | "CLIENT_QUOTA_MANAGEMENT"
   | "GRAPHS_ENABLED"
   | "FTS_ENABLED"
-  | "FTS_DEFAULT_ENABLED"
-  | "MESSAGE_RELATIVE_TIMESTAMP";
+  | "FTS_DEFAULT_ENABLED";
 
 enum ServerStatus {
   ONLINE,

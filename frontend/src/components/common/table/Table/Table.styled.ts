@@ -16,9 +16,6 @@ export const Table = styled.table<Props>`
     vertical-align: middle;
     max-width: 350px;
     word-wrap: break-word;
-    &.break-spaces {
-      white-space: break-spaces;
-    }
   }
 
   & tbody > tr {

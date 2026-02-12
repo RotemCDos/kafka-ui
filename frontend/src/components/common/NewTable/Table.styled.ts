@@ -151,22 +151,13 @@ interface RowProps {
 }
 
 export const Row = styled.tr<RowProps>(
-  ({ theme: { table }, expanded, clickable }) => css`
-    cursor: ${clickable ? 'pointer' : 'default'};
-    background-color: ${table.tr.backgroundColor[
-      expanded ? 'hover' : 'normal'
-    ]};
-    & .show-on-hover {
-      visibility: hidden;
-    }
-    &:hover {
-      background-color: ${table.tr.backgroundColor.hover};
-
-      & .show-on-hover {
-        visibility: visible;
-      }
-    }
-  `
+  ({ theme: { table }, expanded, clickable }) => `
+  cursor: ${clickable ? 'pointer' : 'default'};
+  background-color: ${table.tr.backgroundColor[expanded ? 'hover' : 'normal']};
+  &:hover {
+    background-color: ${table.tr.backgroundColor.hover};
+  }
+`
 );
 
 export const ExpandedRowInfo = styled.div`

@@ -47,8 +47,6 @@ public class ClustersProperties {
 
   Csv csv = new Csv();
 
-  Boolean messageRelativeTimestamp;
-
   @Data
   public static class Csv {
     String lineDelimeter = "crlf";
@@ -102,8 +100,6 @@ public class ClustersProperties {
     List<@Valid Masking> masking;
 
     AuditProperties audit;
-
-    String supportUrl;
   }
 
   @Data
@@ -229,7 +225,6 @@ public class ClustersProperties {
     Boolean consoleAuditEnabled;
     LogLevel level = LogLevel.ALTER_ONLY;
     Map<String, String> auditTopicProperties;
-    Boolean requireAuditTopic;
 
     public enum LogLevel {
       ALL,
@@ -303,7 +298,7 @@ public class ClustersProperties {
   }
 
   private Map<String, Object> flattenClusterProperties(@Nullable String prefix,
-      @Nullable Map<String, Object> propertiesMap) {
+                                                       @Nullable Map<String, Object> propertiesMap) {
     Map<String, Object> flattened = new HashMap<>();
     if (propertiesMap != null) {
       propertiesMap.forEach((k, v) -> {

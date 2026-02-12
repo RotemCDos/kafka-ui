@@ -3688,7 +3688,6 @@ components:
       enum:
         - SOURCE
         - SINK
-        - UNKNOWN
 
     ConsumerGroupOffsetsReset:
       type: object

@@ -63,10 +63,6 @@ public class FeatureService {
       }
     }
 
-    if (Boolean.TRUE.equals(clustersProperties.getMessageRelativeTimestamp())) {
-      features.add(Mono.just(ClusterFeature.MESSAGE_RELATIVE_TIMESTAMP));
-    }
-
     return Flux.fromIterable(features).flatMap(m -> m).collectList();
   }
 
