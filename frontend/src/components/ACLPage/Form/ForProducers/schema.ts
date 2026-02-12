@@ -13,7 +13,6 @@ const formSchema = object({
   transactionalId: string(),
   transactionsIdPrefix: string(),
   idempotent: boolean(),
-  addAllTopics: boolean(),
 });
 
 export default formSchema;

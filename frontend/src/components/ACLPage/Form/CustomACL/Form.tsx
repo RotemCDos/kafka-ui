@@ -6,7 +6,6 @@ import ControlledRadio from 'components/common/Radio/ControlledRadio';
 import Input from 'components/common/Input/Input';
 import ControlledSelect from 'components/common/Select/ControlledSelect';
 import { matchTypeOptions } from 'components/ACLPage/Form/constants';
-import { KafkaAclResourceType } from 'generated-sources';
 import useAppParams from 'lib/hooks/useAppParams';
 import * as S from 'components/ACLPage/Form/Form.styled';
 import ACLFormContext from 'components/ACLPage/Form/AclFormContext';
@@ -18,10 +17,9 @@ import { FormValues } from './types';
 import { toRequest } from './lib';
 import {
   defaultValues,
-  // operations,
+  operations,
   permissions,
   resourceTypes,
-  resourceTypeOperationsMap,
 } from './constants';
 
 const CustomACLForm: FC<AclDetailedFormProps> = ({ formRef }) => {
@@ -46,18 +44,6 @@ const CustomACLForm: FC<AclDetailedFormProps> = ({ formRef }) => {
     }
   };
 
-  // Generating operations options based on resource type
-  const resourceType = methods.watch('resourceType');
-  const operationOptions = resourceTypeOperationsMap[resourceType];
-
-  // Reset operation when resource type changes or being picked again
-  const onResourceTypeChange = (newType: KafkaAclResourceType) => {
-    methods.setValue(
-      'operation',
-      resourceTypeOperationsMap[newType][0]?.value
-    );
-  };
-
   return (
     <FormProvider {...methods}>
       <S.Form ref={formRef} onSubmit={methods.handleSubmit(onSubmit)}>
@@ -78,21 +64,16 @@ const CustomACLForm: FC<AclDetailedFormProps> = ({ formRef }) => {
         </S.Field>
         <hr />
 
-        {/* Added onChange to the resource type select */}
         <S.Field>
           <S.Label htmlFor="resourceType">Resource type</S.Label>
-          <ControlledSelect
-            options={resourceTypes}
-            name="resourceType"
-            onChange={onResourceTypeChange as unknown as (val: unknown) => void}
-          />
+          <ControlledSelect options={resourceTypes} name="resourceType" />
         </S.Field>
 
         <S.Field>
           <S.Label>Operations</S.Label>
           <S.ControlList>
             <ControlledRadio name="permission" options={permissions} />
-            <ControlledSelect options={operationOptions} name="operation" />
+            <ControlledSelect options={operations} name="operation" />
           </S.ControlList>
         </S.Field>
 
