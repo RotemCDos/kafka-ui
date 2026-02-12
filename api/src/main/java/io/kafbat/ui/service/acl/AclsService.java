@@ -164,10 +164,10 @@ public class AclsService {
           .distinct()
           .forEach(resource ->
               opsToAllow.forEach(op ->
-                bindings.add(
-                  new AclBinding(
-                    new ResourcePattern(resourceType, resource, LITERAL),
-                    new AccessControlEntry(principal, host, op, ALLOW)))));
+                  bindings.add(
+                      new AclBinding(
+                          new ResourcePattern(resourceType, resource, LITERAL),
+                          new AccessControlEntry(principal, host, op, ALLOW)))));
     }
     return bindings;
   }
