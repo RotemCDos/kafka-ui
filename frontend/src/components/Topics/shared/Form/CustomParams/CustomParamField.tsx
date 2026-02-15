@@ -10,23 +10,28 @@ import CloseCircleIcon from 'components/common/Icons/CloseCircleIcon';
 import * as C from 'components/Topics/shared/Form/TopicForm.styled';
 import { ConfigSource } from 'generated-sources';
 import InputWithOptions from 'components/common/InputWithOptions/InputWithOptions';
-import { TopicFormData } from 'lib/interfaces/topic';
+import { TopicConfigParams, TopicFormData } from 'lib/interfaces/topic';
 
 import * as S from './CustomParams.styled';
 
 export interface Props {
+  config?: TopicConfigParams;
   isDisabled: boolean;
   index: number;
   existingFields: string[];
   field: FieldArrayWithId<TopicFormData, 'customParams', 'id'>;
   remove: (index: number) => void;
+  setExistingFields: React.Dispatch<React.SetStateAction<string[]>>;
 }
 
 const CustomParamField: React.FC<Props> = ({
+  field,
   isDisabled,
   index,
   remove,
+  config,
   existingFields,
+  setExistingFields,
 }) => {
   const {
     formState: { errors },
@@ -43,23 +48,28 @@ const CustomParamField: React.FC<Props> = ({
     .map((option) => ({
       value: option,
       label: option,
-      disabled: existingFields.includes(option) && option !== nameValue,
+      disabled:
+        (config &&
+          config[option]?.source !== ConfigSource.DYNAMIC_TOPIC_CONFIG) ||
+        existingFields.includes(option),
     }));
 
   React.useEffect(() => {
     if (nameValue !== prevName.current) {
-      prevName.current = nameValue;
-      if (TOPIC_CUSTOM_PARAMS[nameValue]) {
-        setValue(
-          `customParams.${index}.value`,
-          TOPIC_CUSTOM_PARAMS[nameValue],
-          {
-            shouldValidate: true,
-          }
+      let newExistingFields = [...existingFields];
+      if (prevName.current) {
+        newExistingFields = newExistingFields.filter(
+          (name) => name !== prevName.current
         );
       }
+      prevName.current = nameValue;
+      newExistingFields.push(nameValue);
+      setExistingFields(newExistingFields);
+      setValue(`customParams.${index}.value`, TOPIC_CUSTOM_PARAMS[nameValue], {
+        shouldValidate: !!TOPIC_CUSTOM_PARAMS[nameValue],
+      });
     }
-  }, [index, nameValue, setValue]);
+  }, [existingFields, index, nameValue, setExistingFields, setValue]);
 
   return (
     <C.Column>
@@ -94,6 +104,7 @@ const CustomParamField: React.FC<Props> = ({
         <Input
           name={`customParams.${index}.value` as const}
           placeholder="Value"
+          defaultValue={field.value}
           autoComplete="off"
           disabled={isDisabled}
         />
