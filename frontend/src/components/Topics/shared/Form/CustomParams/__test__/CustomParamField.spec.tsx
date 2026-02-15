@@ -22,7 +22,6 @@ const selectOption = async (listbox: HTMLElement, option: string) => {
 
 describe('CustomParamsField', () => {
   const remove = jest.fn();
-  const setExistingFields = jest.fn();
 
   const setupComponent = (props: Props) => {
     const Wrapper: React.FC<PropsWithChildren<unknown>> = ({ children }) => {
@@ -39,7 +38,6 @@ describe('CustomParamsField', () => {
 
   afterEach(() => {
     remove.mockClear();
-    setExistingFields.mockClear();
   });
 
   const getCustomParamInput = () => screen.getByRole('listitem');
@@ -56,7 +54,6 @@ describe('CustomParamsField', () => {
       index,
       remove,
       existingFields,
-      setExistingFields,
     });
     expect(getCustomParamInput()).toBeInTheDocument();
     expect(getValueInput()).toBeInTheDocument();
@@ -73,7 +70,6 @@ describe('CustomParamsField', () => {
         index,
         remove,
         existingFields,
-        setExistingFields,
       });
       await userEvent.click(getRemoveButton());
       expect(remove).toHaveBeenCalledTimes(1);
@@ -86,7 +82,6 @@ describe('CustomParamsField', () => {
         index,
         remove,
         existingFields,
-        setExistingFields,
       });
       await userEvent.type(getRemoveButton(), SPACE_KEY);
       // userEvent.type triggers remove two times as at first it clicks on element and then presses space
@@ -100,7 +95,6 @@ describe('CustomParamsField', () => {
         index,
         remove,
         existingFields,
-        setExistingFields,
       });
       await userEvent.click(getCustomParamInput());
       await selectOption(getCustomParamsList(), topicCustomParam1);
@@ -115,7 +109,6 @@ describe('CustomParamsField', () => {
         index,
         remove,
         existingFields,
-        setExistingFields,
       });
       await userEvent.click(getCustomParamInput());
       await selectOption(getCustomParamsList(), topicCustomParam1);
@@ -123,21 +116,6 @@ describe('CustomParamsField', () => {
       expect(getValueInput()).toHaveValue(
         TOPIC_CUSTOM_PARAMS[topicCustomParam1]
       );
-    });
-
-    it('selecting option updates triggers setExistingFields', async () => {
-      setupComponent({
-        field,
-        isDisabled,
-        index,
-        remove,
-        existingFields,
-        setExistingFields,
-      });
-      await userEvent.click(getCustomParamInput());
-      await selectOption(getCustomParamsList(), topicCustomParam1);
-
-      expect(setExistingFields).toHaveBeenCalledTimes(1);
     });
   });
 });
