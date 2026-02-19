@@ -48,9 +48,7 @@ const CustomParamField: React.FC<Props> = ({
     .map((option) => ({
       value: option,
       label: option,
-      disabled:
-        config?.[option]?.source === ConfigSource.DYNAMIC_TOPIC_CONFIG ||
-        existingFields.includes(option),
+      disabled: existingFields.includes(option),
     }));
 
   React.useEffect(() => {

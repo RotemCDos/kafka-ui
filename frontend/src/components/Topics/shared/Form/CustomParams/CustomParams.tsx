@@ -42,7 +42,9 @@ const CustomParams: React.FC<CustomParamsProps> = ({
     };
   });
 
-  const [existingFields, setExistingFields] = React.useState<string[]>([]);
+  const [existingFields, setExistingFields] = React.useState<string[]>(() =>
+    controlledFields.map((f) => f.name).filter((n) => n !== '')
+  );
   const removeField = (index: number): void => {
     const itemIndex = existingFields.indexOf(controlledFields[index].name);
     if (itemIndex !== -1) {

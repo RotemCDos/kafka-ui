@@ -218,4 +218,36 @@ describe('CustomParams', () => {
       );
     });
   });
+
+  it('pre-existing custom param can be removed and re-added', async () => {
+    renderComponent({ isSubmitting: false }, defaultValues);
+
+    // Verify the pre-existing param is loaded
+    expect(getCustomParamInput()).toHaveValue(
+      defaultValues.customParams[0].name
+    );
+
+    // Verify it is disabled in its own dropdown
+    await expectOptionAvailability(
+      getCustomParamInput,
+      getCustomParamsList,
+      defaultValues.customParams[0].name,
+      true
+    );
+
+    // Delete the pre-existing custom param
+    const deleteButton = screen.getByTitle('Delete customParam field 0');
+    await userEvent.click(deleteButton);
+
+    // Add a new empty custom param field
+    await userEvent.click(getAddNewFieldButton());
+
+    // Verify the previously removed option is now enabled
+    await expectOptionAvailability(
+      getCustomParamInput,
+      getCustomParamsList,
+      defaultValues.customParams[0].name,
+      false
+    );
+  });
 });
