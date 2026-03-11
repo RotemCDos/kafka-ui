@@ -30,16 +30,24 @@ import reactor.core.publisher.Mono;
 
 class AclsServiceTest {
 
-  private static final KafkaCluster CLUSTER = KafkaCluster.builder().build();
+  private static final KafkaCluster CLUSTER = KafkaCluster.builder()
+      .name("testCluster")
+      .build();
 
   private final ReactiveAdminClient adminClientMock = mock(ReactiveAdminClient.class);
   private final AdminClientService adminClientService = mock(AdminClientService.class);
+  private final io.kafbat.ui.service.rbac.AccessControlService accessControlService = mock(
+      io.kafbat.ui.service.rbac.AccessControlService.class);
 
-  private final AclsService aclsService = new AclsService(adminClientService, new ClustersProperties());
+  private final AclsService aclsService = new AclsService(adminClientService, new ClustersProperties(),
+      accessControlService);
 
   @BeforeEach
   void initMocks() {
     when(adminClientService.get(CLUSTER)).thenReturn(Mono.just(adminClientMock));
+    when(accessControlService.validateAclPrincipalModification(org.mockito.ArgumentMatchers.anyString(),
+        org.mockito.ArgumentMatchers.anyString()))
+        .thenReturn(Mono.empty());
   }
 
   @Test
@@ -92,7 +100,7 @@ class AclsServiceTest {
     when(adminClientMock.createAcls(createdCaptor.capture()))
         .thenReturn(Mono.empty());
 
-    var principal = UUID.randomUUID().toString();
+    var principal = "User:" + UUID.randomUUID().toString();
     var host = UUID.randomUUID().toString();
 
     aclsService.createConsumerAcl(
@@ -140,7 +148,7 @@ class AclsServiceTest {
     when(adminClientMock.createAcls(createdCaptor.capture()))
         .thenReturn(Mono.empty());
 
-    var principal = UUID.randomUUID().toString();
+    var principal = "User:" + UUID.randomUUID().toString();
     var host = UUID.randomUUID().toString();
 
     aclsService.createConsumerAcl(
@@ -176,7 +184,7 @@ class AclsServiceTest {
     when(adminClientMock.createAcls(createdCaptor.capture()))
         .thenReturn(Mono.empty());
 
-    var principal = UUID.randomUUID().toString();
+    var principal = "User:" + UUID.randomUUID().toString();
     var host = UUID.randomUUID().toString();
 
     aclsService.createProducerAcl(
@@ -221,7 +229,7 @@ class AclsServiceTest {
     when(adminClientMock.createAcls(createdCaptor.capture()))
         .thenReturn(Mono.empty());
 
-    var principal = UUID.randomUUID().toString();
+    var principal = "User:" + UUID.randomUUID().toString();
     var host = UUID.randomUUID().toString();
 
     aclsService.createProducerAcl(

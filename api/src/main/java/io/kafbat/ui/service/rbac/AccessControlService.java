@@ -119,12 +119,31 @@ public class AccessControlService {
     return context.isAccessible(getUserPermissions(user, context.cluster()));
   }
 
+  public Mono<Void> validateAclPrincipalModification(String clusterName, String principal) {
+    if (!rbacEnabled) {
+      return Mono.empty();
+    }
+    return getUser().flatMap(user -> {
+      List<Permission> permissions = getUserPermissions(user, clusterName);
+
+      boolean isProtected = permissions.stream()
+          .filter(p -> p.getResource() == Resource.ACL)
+          .anyMatch(p -> p.getProtectedPrincipals() != null && p.getProtectedPrincipals().contains(principal));
+
+      if (isProtected) {
+        return Mono
+            .error(new AccessDeniedException("Modification of ACL for principal '" + principal + "' is restricted."));
+      }
+      return Mono.empty();
+    });
+  }
+
   private List<Permission> getUserPermissions(AuthenticatedUser user, @Nullable String clusterName) {
     List<Role> filteredRoles = properties.getRoles()
-            .stream()
-            .filter(filterRole(user))
-            .filter(role -> clusterName == null || role.getClusters().stream().anyMatch(clusterName::equalsIgnoreCase))
-            .toList();
+        .stream()
+        .filter(filterRole(user))
+        .filter(role -> clusterName == null || role.getClusters().stream().anyMatch(clusterName::equalsIgnoreCase))
+        .toList();
 
     // if no roles are found, check if default role is set
     if (filteredRoles.isEmpty() && properties.getDefaultRole() != null) {
@@ -132,8 +151,8 @@ public class AccessControlService {
     }
 
     return filteredRoles.stream()
-            .flatMap(role -> role.getPermissions().stream())
-            .toList();
+        .flatMap(role -> role.getPermissions().stream())
+        .toList();
   }
 
   public static Mono<AuthenticatedUser> getUser() {
@@ -150,7 +169,7 @@ public class AccessControlService {
         .stream()
         .filter(filterRole(user))
         .anyMatch(role -> role.getClusters().stream().anyMatch(clusterName::equalsIgnoreCase));
-    
+
     return isAccessible || properties.getDefaultRole() != null;
   }
 

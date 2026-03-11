@@ -16,7 +16,6 @@ import static org.apache.kafka.common.resource.ResourceType.TRANSACTIONAL_ID;
 
 import com.google.common.collect.Sets;
 import io.kafbat.ui.config.ClustersProperties;
-import io.kafbat.ui.exception.ValidationException;
 import io.kafbat.ui.model.CreateConsumerAclDTO;
 import io.kafbat.ui.model.CreateProducerAclDTO;
 // import io.kafbat.ui.model.CreateStreamAppAclDTO;
@@ -53,6 +52,7 @@ public class AclsService {
 
   private final AdminClientService adminClientService;
   private final ClustersProperties clustersProperties;
+  private final io.kafbat.ui.service.rbac.AccessControlService accessControlService;
 
   private void validatePrincipal(String principal) {
     if (principal == null || principal.isEmpty()) {
@@ -68,8 +68,9 @@ public class AclsService {
 
   public Mono<Void> createAcl(KafkaCluster cluster, AclBinding aclBinding) {
     validatePrincipal(aclBinding.entry().principal());
-    return adminClientService.get(cluster)
-        .flatMap(ac -> createAclsWithLogging(ac, List.of(aclBinding)));
+    return accessControlService.validateAclPrincipalModification(cluster.getName(), aclBinding.entry().principal())
+        .then(adminClientService.get(cluster)
+            .flatMap(ac -> createAclsWithLogging(ac, List.of(aclBinding))));
   }
 
   private Mono<Void> createAclsWithLogging(ReactiveAdminClient ac, Collection<AclBinding> bindings) {
@@ -81,18 +82,19 @@ public class AclsService {
   public Mono<Void> deleteAcl(KafkaCluster cluster, AclBinding aclBinding) {
     var aclString = AclCsv.createAclString(aclBinding);
     log.info("DELETING ACL: [{}]", aclString);
-    return adminClientService.get(cluster)
-        .flatMap(ac -> ac.deleteAcls(List.of(aclBinding)))
-        .doOnSuccess(v -> log.info("ACL DELETED: [{}]", aclString));
+    return accessControlService.validateAclPrincipalModification(cluster.getName(), aclBinding.entry().principal())
+        .then(adminClientService.get(cluster)
+            .flatMap(ac -> ac.deleteAcls(List.of(aclBinding)))
+            .doOnSuccess(v -> log.info("ACL DELETED: [{}]", aclString)));
   }
 
   public Flux<AclBinding> listAcls(KafkaCluster cluster, ResourcePatternFilter filter, String principalSearch,
-                                   Boolean fts) {
+      Boolean fts) {
     return adminClientService.get(cluster)
-      .flatMap(c -> c.listAcls(filter))
-      .map(lst -> filter(new ArrayList<>(lst), principalSearch, fts))
-      .flatMapMany(Flux::fromIterable)
-      .sort(Comparator.comparing(AclBinding::toString));  //sorting to keep stable order on different calls
+        .flatMap(c -> c.listAcls(filter))
+        .map(lst -> filter(new ArrayList<>(lst), principalSearch, fts))
+        .flatMapMany(Flux::fromIterable)
+        .sort(Comparator.comparing(AclBinding::toString));  //sorting to keep stable order on different calls
   }
 
   private List<AclBinding> filter(List<AclBinding> acls, String principalSearch, Boolean fts) {
@@ -112,14 +114,26 @@ public class AclsService {
           if (toAdd.isEmpty() && toDelete.isEmpty()) {
             return Mono.empty();
           }
-          log.info("Starting new ACLs creation");
-          return ac.createAcls(toAdd)
-              .doOnSuccess(v -> {
-                log.info("{} new ACLs created", toAdd.size());
-                log.info("Starting ACLs deletion");
-              })
-              .then(ac.deleteAcls(toDelete)
-                  .doOnSuccess(v -> log.info("{} ACLs deleted", toDelete.size())));
+
+          var modifiedPrincipals = java.util.stream.Stream.concat(toDelete.stream(), toAdd.stream())
+              .map(b -> b.entry().principal())
+              .distinct()
+              .toList();
+
+          Mono<Void> validationMono = Flux.fromIterable(modifiedPrincipals)
+              .flatMap(p -> accessControlService.validateAclPrincipalModification(cluster.getName(), p))
+              .then();
+
+          return validationMono.then(Mono.defer(() -> {
+            log.info("Starting new ACLs creation");
+            return ac.createAcls(toAdd)
+                .doOnSuccess(v -> {
+                  log.info("{} new ACLs created", toAdd.size());
+                  log.info("Starting ACLs deletion");
+                })
+                .then(ac.deleteAcls(toDelete)
+                    .doOnSuccess(v -> log.info("{} ACLs deleted", toDelete.size())));
+          }));
         }));
   }
 
@@ -145,11 +159,11 @@ public class AclsService {
 
   // creates allow binding for resources by prefix or specific names list
   private List<AclBinding> createAllowBindings(ResourceType resourceType,
-                                               List<AclOperation> opsToAllow,
-                                               String principal,
-                                               String host,
-                                               @Nullable String resourcePrefix,
-                                               @Nullable Collection<String> resourceNames) {
+      List<AclOperation> opsToAllow,
+      String principal,
+      String host,
+      @Nullable String resourcePrefix,
+      @Nullable Collection<String> resourceNames) {
     List<AclBinding> bindings = new ArrayList<>();
     if (resourcePrefix != null) {
       for (var op : opsToAllow) {
@@ -164,19 +178,20 @@ public class AclsService {
           .distinct()
           .forEach(resource ->
               opsToAllow.forEach(op ->
-                  bindings.add(
-                      new AclBinding(
-                          new ResourcePattern(resourceType, resource, LITERAL),
-                          new AccessControlEntry(principal, host, op, ALLOW)))));
+                bindings.add(
+              new AclBinding(
+                  new ResourcePattern(resourceType, resource, LITERAL),
+                  new AccessControlEntry(principal, host, op, ALLOW)))));
     }
     return bindings;
   }
 
   public Mono<Void> createConsumerAcl(KafkaCluster cluster, CreateConsumerAclDTO request) {
     validatePrincipal(request.getPrincipal());
-    return adminClientService.get(cluster)
-        .flatMap(ac -> createAclsWithLogging(ac, createConsumerBindings(request)))
-        .then();
+    return accessControlService.validateAclPrincipalModification(cluster.getName(), request.getPrincipal())
+        .then(adminClientService.get(cluster)
+            .flatMap(ac -> createAclsWithLogging(ac, createConsumerBindings(request)))
+            .then());
   }
 
   //Read, Describe on topics and consumerGroups
@@ -203,9 +218,10 @@ public class AclsService {
 
   public Mono<Void> createProducerAcl(KafkaCluster cluster, CreateProducerAclDTO request) {
     validatePrincipal(request.getPrincipal());
-    return adminClientService.get(cluster)
-        .flatMap(ac -> createAclsWithLogging(ac, createProducerBindings(request)))
-        .then();
+    return accessControlService.validateAclPrincipalModification(cluster.getName(), request.getPrincipal())
+        .then(adminClientService.get(cluster)
+            .flatMap(ac -> createAclsWithLogging(ac, createProducerBindings(request)))
+            .then());
   }
 
   //Write, Describe, Create permission on topics, Write, Describe on transactionalIds
