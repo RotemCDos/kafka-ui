@@ -1,10 +1,11 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import useAppParams from 'lib/hooks/useAppParams';
 import {
   clusterConsumerGroupResetRelativePath,
   clusterConsumerGroupsPath,
   ClusterGroupParam,
+  clusterConnectorsPath,
 } from 'lib/paths';
 import Search from 'components/common/Search/Search';
 import ClusterContext from 'components/contexts/ClusterContext';
@@ -25,6 +26,9 @@ import ResourcePageHeading from 'components/common/ResourcePageHeading/ResourceP
 import { exportTableCSV, TableProvider } from 'components/common/NewTable';
 import { Button } from 'components/common/Button/Button';
 import ExportIcon from 'components/common/Icons/ExportIcon';
+import PageLoader from 'components/common/PageLoader/PageLoader';
+import ErrorPage from 'components/ErrorPage/ErrorPage';
+import { getConnectorNameFromConsumerGroup } from 'lib/utils/connectorUtils';
 
 import { TopicsTable } from './TopicsTable/TopicsTable';
 
@@ -34,7 +38,14 @@ const Details: React.FC = () => {
   const routeParams = useAppParams<ClusterGroupParam>();
   const { clusterName, consumerGroupID } = routeParams;
 
-  const { data: consumerGroup } = useConsumerGroupDetails(routeParams);
+  const {
+    data: consumerGroup,
+    error,
+    isSuccess,
+    refetch,
+    isLoading,
+    isRefetching,
+  } = useConsumerGroupDetails(routeParams);
   const deleteConsumerGroup = useDeleteConsumerGroupMutation(routeParams);
 
   const onDelete = async () => {
@@ -47,6 +58,7 @@ const Details: React.FC = () => {
   };
 
   const hasAssignedTopics = consumerGroup?.topics !== 0;
+  const connectorName = getConnectorNameFromConsumerGroup(consumerGroupID);
 
   return (
     <TableProvider>
@@ -100,45 +112,69 @@ const Details: React.FC = () => {
                 )}
               </ResourcePageHeading>
             </div>
-            <Metrics.Wrapper>
-              <Metrics.Section>
-                <Metrics.Indicator label="State">
-                  <Tooltip
-                    value={
-                      <Tag color={getTagColor(consumerGroup?.state)}>
-                        {consumerGroup?.state}
-                      </Tag>
-                    }
-                    content={
-                      CONSUMER_GROUP_STATE_TOOLTIPS[
-                        consumerGroup?.state || ConsumerGroupState.UNKNOWN
-                      ]
-                    }
-                    placement="bottom-start"
-                  />
-                </Metrics.Indicator>
-                <Metrics.Indicator label="Members">
-                  {consumerGroup?.members}
-                </Metrics.Indicator>
-                <Metrics.Indicator label="Assigned Topics">
-                  {consumerGroup?.topics}
-                </Metrics.Indicator>
-                <Metrics.Indicator label="Assigned Partitions">
-                  {consumerGroup?.partitions?.length}
-                </Metrics.Indicator>
-                <Metrics.Indicator label="Coordinator ID">
-                  {consumerGroup?.coordinator?.id}
-                </Metrics.Indicator>
-                <Metrics.Indicator label="Total lag">
-                  {consumerGroup?.consumerLag}
-                </Metrics.Indicator>
-              </Metrics.Section>
-            </Metrics.Wrapper>
-            <ControlPanelWrapper hasInput style={{ margin: '16px 0 20px' }}>
-              <Search placeholder="Search by Topic Name" />
-            </ControlPanelWrapper>
 
-            <TopicsTable partitions={consumerGroup?.partitions ?? []} />
+            {(isLoading || isRefetching) && <PageLoader />}
+
+            {error && (
+              <ErrorPage
+                status={error.status}
+                onClick={refetch}
+                resourceName={`Consumer Group ${consumerGroupID}`}
+              />
+            )}
+
+            {isSuccess && (
+              <>
+                {' '}
+                <Metrics.Wrapper>
+                  <Metrics.Section>
+                    <Metrics.Indicator label="State">
+                      <Tooltip
+                        value={
+                          <Tag color={getTagColor(consumerGroup?.state)}>
+                            {consumerGroup?.state}
+                          </Tag>
+                        }
+                        content={
+                          CONSUMER_GROUP_STATE_TOOLTIPS[
+                            consumerGroup?.state || ConsumerGroupState.UNKNOWN
+                          ]
+                        }
+                        placement="bottom-start"
+                      />
+                    </Metrics.Indicator>
+                    <Metrics.Indicator label="Members">
+                      {consumerGroup?.members}
+                    </Metrics.Indicator>
+                    <Metrics.Indicator label="Assigned Topics">
+                      {consumerGroup?.topics}
+                    </Metrics.Indicator>
+                    <Metrics.Indicator label="Assigned Partitions">
+                      {consumerGroup?.partitions?.length}
+                    </Metrics.Indicator>
+                    <Metrics.Indicator label="Coordinator ID">
+                      {consumerGroup?.coordinator?.id}
+                    </Metrics.Indicator>
+                    <Metrics.Indicator label="Total lag">
+                      {consumerGroup?.consumerLag}
+                    </Metrics.Indicator>
+                    {connectorName && (
+                      <Metrics.Indicator label="Connector">
+                        <Link
+                          to={`${clusterConnectorsPath(clusterName)}?search=${encodeURIComponent(connectorName)}`}
+                        >
+                          {connectorName}
+                        </Link>
+                      </Metrics.Indicator>
+                    )}
+                  </Metrics.Section>
+                </Metrics.Wrapper>
+                <ControlPanelWrapper hasInput style={{ margin: '16px 0 20px' }}>
+                  <Search placeholder="Search by Topic Name" />
+                </ControlPanelWrapper>
+                <TopicsTable partitions={consumerGroup?.partitions ?? []} />
+              </>
+            )}
           </>
         );
       }}
