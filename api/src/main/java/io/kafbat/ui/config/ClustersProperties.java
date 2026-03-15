@@ -80,6 +80,7 @@ public class ClustersProperties {
     String schemaRegistry;
     SchemaRegistryAuth schemaRegistryAuth;
     KeystoreConfig schemaRegistrySsl;
+    String schemaRegistryTopicSubjectSuffix = "-value";
 
     String ksqldbServer;
     KsqldbServerAuth ksqldbServerAuth;
@@ -102,8 +103,6 @@ public class ClustersProperties {
     List<@Valid Masking> masking;
 
     AuditProperties audit;
-
-    String supportUrl;
   }
 
   @Data
@@ -159,6 +158,7 @@ public class ClustersProperties {
     String password;
     String keystoreLocation;
     String keystorePassword;
+    String consumerNamePattern = "connect-%s";
   }
 
   @Data

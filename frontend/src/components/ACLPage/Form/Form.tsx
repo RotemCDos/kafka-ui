@@ -16,11 +16,9 @@ const DETAILED_FORM_COMPONENTS: Record<
   [ACLType.CUSTOM_ACL]: React.lazy(() => import('./CustomACL/Form')),
   [ACLType.FOR_CONSUMERS]: React.lazy(() => import('./ForConsumers/Form')),
   [ACLType.FOR_PRODUCERS]: React.lazy(() => import('./ForProducers/Form')),
-  /*
   [ACLType.FOR_KAFKA_STREAM_APPS]: React.lazy(
     () => import('./ForKafkaStreamApps/Form')
   ),
-  */
 };
 
 const ACLForm: FC<ACLFormProps> = ({ isOpen: open }) => {

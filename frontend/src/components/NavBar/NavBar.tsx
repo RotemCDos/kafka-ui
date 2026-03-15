@@ -14,7 +14,6 @@ import MenuIcon from 'components/common/Icons/MenuIcon';
 
 import { UserTimezone } from './UserTimezone/UserTimezone';
 import UserInfo from './UserInfo/UserInfo';
-import ExternalLinkIcon from 'components/common/Icons/ExternalLinkIcon';
 import * as S from './NavBar.styled';
 
 interface Props {
@@ -55,13 +54,6 @@ const options = [
 
 const NavBar: React.FC<Props> = ({ onBurgerClick }) => {
   const { themeMode, setThemeMode } = useContext(ThemeModeContext);
-  const supportUrl = window._env_?.REACT_APP_SUPPORT_URL;
-
-  const handleSupportRedirect = () => {
-    if (supportUrl) {
-      window.open(supportUrl, '_blank');
-    }
-  };
 
   return (
     <S.Navbar role="navigation" aria-label="Page Header">
@@ -82,15 +74,6 @@ const NavBar: React.FC<Props> = ({ onBurgerClick }) => {
         </S.NavbarBrand>
       </S.NavbarBrand>
       <S.NavbarSocial>
-        {supportUrl && (
-          <Button
-            buttonType="text"
-            buttonSize="S"
-            onClick={handleSupportRedirect}
-          >
-            Docs <ExternalLinkIcon />
-          </Button>
-        )}
         <UserTimezone />
 
         <Select
@@ -99,7 +82,7 @@ const NavBar: React.FC<Props> = ({ onBurgerClick }) => {
           onChange={setThemeMode}
           isThemeMode
         />
-        {/* <S.SocialLink href="https://github.com/kafbat/kafka-ui" target="_blank">
+        <S.SocialLink href="https://github.com/kafbat/kafka-ui" target="_blank">
           <GitHubIcon />
         </S.SocialLink>
         <S.SocialLink
@@ -113,7 +96,7 @@ const NavBar: React.FC<Props> = ({ onBurgerClick }) => {
           target="_blank"
         >
           <ProductHuntIcon />
-        </S.SocialLink> */}
+        </S.SocialLink>
         <UserInfo />
       </S.NavbarSocial>
     </S.Navbar>

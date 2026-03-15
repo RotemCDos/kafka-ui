@@ -4,34 +4,37 @@ import {
   useMutation,
   useQuery,
   useQueryClient,
+  UseQueryOptions,
 } from '@tanstack/react-query';
 import { ClusterName } from 'lib/interfaces/cluster';
-import { showSuccessAlert } from 'lib/errorHandling';
+import { apiFetch, ServerResponse, showSuccessAlert } from 'lib/errorHandling';
 import {
   CreateConsumerAcl,
   CreateProducerAcl,
-  // CreateStreamAppAcl,
+  CreateStreamAppAcl,
   KafkaAcl,
 } from 'generated-sources';
 
-export function useAcls({
-  clusterName,
-  search,
-  fts,
-}: {
-  clusterName: ClusterName;
-  search?: string;
-  fts?: boolean;
-}) {
-  return useQuery({
+export function useAcls(
+  {
+    clusterName,
+    search,
+    fts,
+  }: {
+    clusterName: ClusterName;
+    search?: string;
+    fts?: boolean;
+  },
+  options?: Omit<
+    UseQueryOptions<KafkaAcl[], ServerResponse>,
+    'queryKey' | 'queryFn'
+  >
+) {
+  return useQuery<KafkaAcl[], ServerResponse>({
     queryKey: ['clusters', clusterName, 'acls', { search, fts }],
-    queryFn: () =>
-      api.listAcls({
-        clusterName,
-        search,
-        fts,
-      }),
+    queryFn: () => apiFetch(() => api.listAcls({ clusterName, search, fts })),
     placeholderData: (previousData) => previousData,
+    ...options,
   });
 }
 
@@ -107,26 +110,26 @@ export function useCreateProducerAcl(clusterName: ClusterName) {
   };
 }
 
-// export function useCreateStreamAppAcl(clusterName: ClusterName) {
-//   const queryClient = useQueryClient();
-//   const mutate = useMutation({
-//     mutationFn: (createStreamAppAcl: CreateStreamAppAcl) =>
-//       api.createStreamAppAcl({
-//         clusterName,
-//         createStreamAppAcl,
-//       }),
-//     onSuccess() {
-//       onCreateAclSuccess(queryClient, clusterName);
-//     },
-//   });
-//
-//   return {
-//     createResource: async (acl: CreateStreamAppAcl) => {
-//       return mutate.mutateAsync(acl);
-//     },
-//     ...mutate,
-//   };
-// }
+export function useCreateStreamAppAcl(clusterName: ClusterName) {
+  const queryClient = useQueryClient();
+  const mutate = useMutation({
+    mutationFn: (createStreamAppAcl: CreateStreamAppAcl) =>
+      api.createStreamAppAcl({
+        clusterName,
+        createStreamAppAcl,
+      }),
+    onSuccess() {
+      onCreateAclSuccess(queryClient, clusterName);
+    },
+  });
+
+  return {
+    createResource: async (acl: CreateStreamAppAcl) => {
+      return mutate.mutateAsync(acl);
+    },
+    ...mutate,
+  };
+}
 
 export function useDeleteAclMutation(clusterName: ClusterName) {
   const queryClient = useQueryClient();
